@@ -14,10 +14,12 @@ export default function Footer() {
             Let PearlGo turn your ideas into a personalized travel experience in seconds.
           </p>
 
-          <button className="inline-flex items-center gap-2 bg-[#004aad] text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800 transition">
-            Try PearlGo now
-            <ArrowRight size={16} />
-          </button>
+          <Link href="/new-trip">
+            <button className="inline-flex items-center gap-2 bg-[#004aad] text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800 transition">
+              Try PearlGo now
+              <ArrowRight size={16} />
+            </button>
+          </Link>
         </div>
       </div>
 
