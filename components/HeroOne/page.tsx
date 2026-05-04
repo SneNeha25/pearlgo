@@ -44,7 +44,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-600 md:text-lg">
-            Plan destinations, budgets, routes, hotels, and activities with a smart chatbot-style travel assistant.
+            Plan destinations budgets, routes, hotels, and activities with a smart chatbot-style travel assistant.
           </p>
 
           {/* COMPACT CHATBOX */}
