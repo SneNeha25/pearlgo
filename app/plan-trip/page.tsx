@@ -1,139 +1,221 @@
 'use client';
+
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
-import { MessageCircle, X } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const [tripCreated, setTripCreated] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState([{ text: 'Hi 👋 How can I help you plan your trip?', sender: 'bot' }]);
   const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+
+  const [messages, setMessages] = useState([
+    {
+      text: 'Hi 👋 I’m PearlGo AI. I can help you plan your Sri Lanka trip!',
+      sender: 'bot',
+    },
+  ]);
+
+  const suggestions = ['Best beaches in Sri Lanka', 'Cheap travel budget', 'Sigiriya history', 'Ella places to visit'];
 
   const tripOptions = [
     {
       title: 'Sigiriya',
-      description: 'Beaches, hills & culture',
+      desc: 'Ancient rock fortress',
       image: '/sigiriya-srilanka.webp',
+      link: '/select-trip/select-trip-sigiriya',
     },
-    {
-      title: 'Galle Fort',
-      description: 'Galle Fort',
-      image: '/galle.jpg',
-    },
+    { title: 'Galle Fort', desc: 'Colonial coastal city', image: '/galle.jpg', link: '/select-trip/select-trip-galle' },
     {
       title: 'Pasikuda Beach',
-      description: 'Relaxing beach vibes',
+      desc: 'Crystal-clear waters',
       image: '/pasikuda.jpg',
+      link: '/select-trip/select-trip-pasikuda',
+    },
+    {
+      title: 'Nine Arches Bridge',
+      desc: 'Iconic railway bridge',
+      image: '/nine-arches-bridge.jpg',
+      link: '/select-trip/select-trip-nine-arches',
+    },
+    {
+      title: 'Adam’s Peak',
+      desc: 'Sacred sunrise hike',
+      image: '/adams-peak.webp',
+      link: '/select-trip/select-trip-adams-peak',
+    },
+    {
+      title: 'Anuradhapura',
+      desc: 'Ancient sacred city',
+      image: '/anuradhapura.jpg',
+      link: '/select-trip/select-trip-anuradhapura',
     },
   ];
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const getBotReply = (text: string) => {
+    const msg = text.toLowerCase();
 
-    const userMsg = { text: input, sender: 'user' };
-    setMessages((prev) => [...prev, userMsg]);
+    if (msg.includes('sigiriya'))
+      return '🏰 Sigiriya is a UNESCO World Heritage site with Lion Rock and ancient frescoes.';
+    if (msg.includes('galle')) return '🌊 Galle Fort is a beautiful colonial city with ocean views.';
+    if (msg.includes('beach')) return '🏝️ Top beaches: Mirissa, Unawatuna, Pasikuda, Arugam Bay.';
+    if (msg.includes('ella')) return '🌿 Ella is famous for Nine Arches Bridge and scenic train rides.';
+    if (msg.includes('budget')) return '💰 Average travel cost: $25–$120 per day depending on style.';
 
-    let reply = 'I can help you plan your trip 😊';
+    return '🤖 I can help you explore destinations, budget, food, and routes in Sri Lanka!';
+  };
 
-    if (input.toLowerCase().includes('budget')) {
-      reply = 'Tell me your budget, I’ll suggest the best trips 💰';
-    } else if (input.toLowerCase().includes('beach')) {
-      reply = 'Pasikuda & Arugam Bay are perfect for beaches 🏝️';
-    } else if (input.toLowerCase().includes('city')) {
-      reply = 'Galle is great for a modern city experience 🌆';
-    }
+  const handleSend = (text?: string) => {
+    const message = text || input;
+    if (!message.trim()) return;
+
+    setMessages((prev) => [...prev, { text: message, sender: 'user' }]);
+    setInput('');
+    setTyping(true);
 
     setTimeout(() => {
+      const reply = getBotReply(message);
+      setTyping(false);
       setMessages((prev) => [...prev, { text: reply, sender: 'bot' }]);
-    }, 500);
-
-    setInput('');
+    }, 900);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 mb-24">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white overflow-x-hidden">
       {/* HERO */}
-      <div className="bg-[#00337a] text-white py-24 px-6 text-center">
-        <h1 className="text-5xl font-bold mb-4">Plan Your Dream Trip ✈️</h1>
-        <p className="text-gray-200 mb-8 text-lg">Smart travel planning made simple & beautiful</p>
+      <div className="bg-gradient-to-r from-indigo-950 via-blue-900 to-indigo-800 text-white py-24 text-center px-6">
+        <h1 className="text-5xl font-bold">Plan Your Sri Lanka Trip ✈️</h1>
+        <p className="text-gray-200 mt-4 text-lg">AI-powered travel assistant for smarter journeys</p>
 
         <button
+          type="button"
           onClick={() => setTripCreated(true)}
-          className="bg-white text-[#00337a] px-8 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition"
+          className="mt-8 bg-white text-blue-900 px-8 py-3 rounded-full font-semibold shadow-lg"
         >
-          Create New Trip
+          Explore Destinations
         </button>
       </div>
 
-      {/* TRIP OPTIONS */}
-      {tripCreated && (
-        <div className="max-w-6xl mx-auto px-6 py-16">
-          <h2 className="text-3xl font-bold text-center mb-12 text-[#00337a]">Choose Your Destination</h2>
+      {/* DESTINATIONS */}
+      <AnimatePresence>
+        {tripCreated && (
+          <motion.div className="max-w-6xl mx-auto px-6 py-16">
+            <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">Popular Destinations</h2>
 
-          <div className="grid md:grid-cols-3 gap-10">
-            {tripOptions.map((trip, index) => (
-              <div key={index} className="rounded-2xl shadow-lg overflow-hidden bg-white hover:shadow-xl transition">
-                {/* IMAGE */}
-                <img src={trip.image} alt={trip.title} className="h-56 w-full object-cover" />
+            <div className="grid md:grid-cols-3 gap-8">
+              {tripOptions.map((trip, i) => (
+                <motion.div
+                  key={i}
+                  whileHover={{ scale: 1.03 }}
+                  className="bg-white rounded-2xl shadow-md overflow-hidden"
+                >
+                  <Image
+                    src={trip.image}
+                    alt={trip.title}
+                    width={500}
+                    height={300}
+                    className="h-52 w-full object-cover"
+                  />
 
-                {/* CONTENT */}
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold text-[#00337a]">{trip.title}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{trip.description}</p>
+                  <div className="p-5">
+                    <h3 className="text-lg font-semibold text-blue-900">{trip.title}</h3>
+                    <p className="text-gray-600 text-sm">{trip.desc}</p>
 
-                  <Link href="/select-trip-sigiriya">
-                    <button className="mt-4 w-full bg-[#00337a] text-white py-2 rounded-lg hover:bg-[#00275c] transition">
-                      Select Trip
-                    </button>
-                  </Link>
+                    <Link href={trip.link}>
+                      <button
+                        type="button"
+                        className="mt-4 w-full bg-blue-900 text-white py-2 rounded-lg hover:bg-blue-800 transition"
+                      >
+                        View Trip
+                      </button>
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FLOATING CHAT BUTTON */}
+      <button
+        type="button"
+        onClick={() => setChatOpen(!chatOpen)}
+        className="fixed bottom-6 right-6 bg-blue-900 text-white p-4 rounded-full shadow-xl"
+        aria-label="Open chat"
+      >
+        {chatOpen ? <X /> : <MessageCircle />}
+      </button>
+
+      {/* CHAT WINDOW */}
+      <AnimatePresence>
+        {chatOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 100, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100 }}
+            className="fixed bottom-20 right-6 w-96 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          >
+            {/* HEADER */}
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-4 flex items-center gap-2">
+              <Sparkles size={18} />
+              PearlGo AI Assistant
+            </div>
+
+            {/* SUGGESTIONS */}
+            <div className="p-3 flex flex-wrap gap-2 bg-gray-50">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleSend(s)}
+                  className="text-xs bg-white px-2 py-1 rounded-full hover:bg-blue-50 shadow-sm"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            {/* MESSAGES */}
+            <div className="p-4 h-72 overflow-y-auto space-y-3 bg-white">
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`text-sm p-2 rounded-lg max-w-[80%] ${
+                    msg.sender === 'user' ? 'bg-blue-900 text-white ml-auto' : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {msg.text}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
 
-      {/* CHAT BUTTON */}
-      <div className="fixed bottom-6 right-6">
-        <button
-          onClick={() => setChatOpen(!chatOpen)}
-          className="bg-[#00337a] text-white p-4 rounded-full shadow-lg hover:scale-110 transition"
-        >
-          {chatOpen ? <X /> : <MessageCircle />}
-        </button>
-      </div>
+              {typing && <div className="text-xs text-gray-500 animate-pulse">PearlGo AI is typing...</div>}
+            </div>
 
-      {/* CHATBOX */}
-      {chatOpen && (
-        <div className="fixed bottom-20 right-6 w-80 bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-          <div className="bg-[#00337a] text-white p-4 font-semibold">Travel Assistant 🤖</div>
+            {/* INPUT */}
+            <div className="flex">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask about Sri Lanka..."
+                className="flex-1 p-3 text-sm outline-none"
+              />
 
-          <div className="p-4 h-64 overflow-y-auto space-y-3">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`p-2 rounded-lg text-sm max-w-[80%] ${
-                  msg.sender === 'user' ? 'bg-[#00337a] text-white ml-auto' : 'bg-gray-200 text-gray-800'
-                }`}
+              <button
+                type="button"
+                onClick={() => handleSend()}
+                className="bg-blue-900 text-white px-4 flex items-center justify-center"
+                aria-label="Send message"
               >
-                {msg.text}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex border-t">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask something..."
-              className="flex-1 p-2 text-sm outline-none"
-            />
-            <button onClick={handleSend} className="bg-[#00337a] text-white px-4">
-              Send
-            </button>
-          </div>
-        </div>
-      )}
+                <Send size={18} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

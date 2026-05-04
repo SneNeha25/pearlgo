@@ -1,4 +1,5 @@
 import { Heart, DollarSign, Gem, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 
 export default function TripPlanner() {
   return (
@@ -13,9 +14,11 @@ export default function TripPlanner() {
           destinations and cozy stays to flights, road trips, and more.
         </p>
 
-        <button className="mt-4 inline-flex items-center gap-2 bg-[#004aad] text-white px-5 py-2.5 rounded-full text-sm hover:bg-blue-500 transition">
-          Create a new trip →
-        </button>
+        <Link href="/plan-trip">
+          <button className="mt-4 inline-flex items-center gap-2 bg-[#004aad] text-white px-5 py-2.5 rounded-full text-sm hover:bg-blue-500 transition">
+            Create a new trip →
+          </button>
+        </Link>
       </div>
 
       {/* Middle Section */}

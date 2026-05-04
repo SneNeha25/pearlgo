@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Mic, Send, Sparkles } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 
 const changingTexts = [
   'Help me plan a budget-friendly vacation to Colombo',
@@ -80,15 +80,6 @@ export default function HeroSection() {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-label="Voice input"
-                    title="Voice input"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
-                  >
-                    <Mic size={18} />
-                  </button>
-
                   <button
                     type="button"
                     aria-label="Send message"
