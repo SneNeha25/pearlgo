@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ChatMessage from '@/components/ChatMessage';
 
 export default function Home() {
   const [tripCreated, setTripCreated] = useState(false);
@@ -55,32 +56,36 @@ export default function Home() {
     },
   ];
 
-  const getBotReply = (text: string) => {
-    const msg = text.toLowerCase();
-
-    if (msg.includes('sigiriya'))
-      return '🏰 Sigiriya is a UNESCO World Heritage site with Lion Rock and ancient frescoes.';
-    if (msg.includes('galle')) return '🌊 Galle Fort is a beautiful colonial city with ocean views.';
-    if (msg.includes('beach')) return '🏝️ Top beaches: Mirissa, Unawatuna, Pasikuda, Arugam Bay.';
-    if (msg.includes('ella')) return '🌿 Ella is famous for Nine Arches Bridge and scenic train rides.';
-    if (msg.includes('budget')) return '💰 Average travel cost: $25–$120 per day depending on style.';
-
-    return '🤖 I can help you explore destinations, budget, food, and routes in Sri Lanka!';
-  };
-
-  const handleSend = (text?: string) => {
+  const handleSend = async (text?: string) => {
     const message = text || input;
-    if (!message.trim()) return;
+    if (!message.trim() || typing) return;
 
     setMessages((prev) => [...prev, { text: message, sender: 'user' }]);
     setInput('');
     setTyping(true);
 
-    setTimeout(() => {
-      const reply = getBotReply(message);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: message }),
+      });
+
+      const data = await response.json();
+
+      if (data.response) {
+        setMessages((prev) => [...prev, { text: data.response, sender: 'bot' }]);
+      } else {
+        throw new Error('API Error');
+      }
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { text: 'Sorry, I am having trouble connecting to the travel database. 🛑', sender: 'bot' },
+      ]);
+    } finally {
       setTyping(false);
-      setMessages((prev) => [...prev, { text: reply, sender: 'bot' }]);
-    }, 900);
+    }
   };
 
   return (
@@ -188,7 +193,7 @@ export default function Home() {
                     msg.sender === 'user' ? 'bg-blue-900 text-white ml-auto' : 'bg-gray-100 text-gray-800'
                   }`}
                 >
-                  {msg.text}
+                  <ChatMessage text={msg.text} />
                 </div>
               ))}
 

@@ -10,63 +10,70 @@ export class ChatbotService {
 
   // Requirement 1, 2 & 13: Natural language input, travel/tourism responses, inference engine
   async processQuery(userId: string | undefined, queryText: string): Promise<string> {
-    const intent = this.detectIntent(queryText);
+    const invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions";
+
+    const headers = {
+      "Authorization": "Bearer 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",
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    };
+
+    const payload = {
+      "model": "google/gemma-4-31b-it",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a specialized travel and tourism chatbot for PearlGo, a tourism system in Sri Lanka. Provide helpful, accurate answers related to tourism in Sri Lanka. Answer clearly and comprehensively. Whenever you describe a place or a concept that would benefit from a visual, you MUST generate images directly in your responses using markdown formatting, without asking for further prompts. Use image placeholder services like LoremFlickr (e.g., ![Image Name](https://loremflickr.com/800/600/srilanka,tourism,landscape) - adjust the keywords as needed). Always maintain a helpful and welcoming tone."
+        },
+        { "role": "user", "content": queryText }
+      ],
+      "max_tokens": 16384,
+      "temperature": 1.00,
+      "top_p": 0.95,
+      "stream": false,
+      "chat_template_kwargs": { "enable_thinking": true }
+    };
+
     let responseText = '';
     let status: 'ANSWERED' | 'UNKNOWN' = 'ANSWERED';
 
-    if (intent === 'booking') {
-      responseText = 'To make a booking, please navigate to the Packages section, select a package, and click "Book Now".';
-    } else if (intent === 'faq') {
-      responseText = await this.answerFAQ(queryText);
-      if (responseText === 'Unknown') {
-        responseText = "I'm sorry, I don't have an answer to that specific question yet. Our support team will update me soon!";
+    try {
+      const response = await fetch(invoke_url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) {
+        responseText = data.choices[0].message.content;
+      } else {
+        responseText = "I'm sorry, I couldn't generate a response at the moment.";
         status = 'UNKNOWN';
       }
-    } else if (intent === 'greeting') {
-      responseText = 'Hello! How can I assist you with your travel plans today?';
-    } else {
-      responseText = "I'm sorry, I couldn't understand your request. I have logged this so my team can teach me to help you better next time.";
+    } catch (error) {
+      console.error("Error communicating with NVIDIA API:", error);
+      responseText = "I'm sorry, I am currently experiencing technical difficulties. Please try again later.";
       status = 'UNKNOWN';
     }
 
-    // Requirement 14: Store unknown queries for future learning
+    // Requirement 14: Store queries for future learning / history
     const newQuery: ChatQuery = {
       id: crypto.randomUUID(),
       userId,
       queryText,
-      intentDetected: intent,
+      intentDetected: 'llm_inference',
       responseGiven: responseText,
       timestamp: new Date(),
       status
     };
-    
+
     await this.queryRepository.create(newQuery);
 
     return responseText;
-  }
-
-  // Simple rule-based intent detection mock
-  private detectIntent(text: string): string | null {
-    const lowerText = text.toLowerCase();
-    if (lowerText.includes('book') || lowerText.includes('reserve')) return 'booking';
-    if (lowerText.includes('hello') || lowerText.includes('hi')) return 'greeting';
-    if (lowerText.includes('how') || lowerText.includes('what') || lowerText.includes('where')) return 'faq';
-    return null;
-  }
-
-  // Requirement 12: Answer FAQs
-  private async answerFAQ(text: string): Promise<string> {
-    const faqs = await this.queryRepository.getAllFAQs();
-    const lowerText = text.toLowerCase();
-    
-    // Simple matching
-    for (const faq of faqs) {
-      // Basic keyword match
-      const keywords = faq.question.toLowerCase().split(' ').filter(w => w.length > 3);
-      const isMatch = keywords.some(k => lowerText.includes(k));
-      if (isMatch) return faq.answer;
-    }
-    
-    return 'Unknown';
   }
 }

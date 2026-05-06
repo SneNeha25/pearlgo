@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Send, Sparkles, Bot, MessageCircle, Plane, MapPin, Compass, Globe } from 'lucide-react';
+import ChatMessage from '../ChatMessage';
 
 const suggestions = [
   'Plan a 3-day Sri Lanka beach trip',
@@ -10,44 +11,42 @@ const suggestions = [
   'Colombo city tour plan',
 ];
 
-const inferenceEngine: Record<string, string> = {
-  hi: 'Hello 👋 Welcome to PearlGo AI Travel Assistant!',
-  'good morning': 'Good morning! Ready to plan your next adventure? ☀️',
-  thanks: 'Anytime! Happy to help you plan your journey ✈️',
-  sigiriya: '🦁 Sigiriya Rock Fortress + Dambulla Cave Temple 🏛 UNESCO world heritage sites!',
-  price: '💰 Travel prices depend on location, duration, and transport. Tell me your plan and I’ll calculate it!',
-  budget: '🧾 I can help you plan a budget-friendly trip in Sri Lanka under any budget 💸',
-  transport: '🚗 Options: car, van, train, or tuk-tuk depending on your trip style!',
-  thank: "You're welcome! Let me know if you have any travel questions. 😊",
 
-  beach: '🏖 Mirissa • Unawatuna • Bentota 🌊',
-  ella: '🚆 Ella: Nine Arches Bridge + Little Adam’s Peak 🌄',
-  kandy: '🏞 Kandy: Temple of Tooth + Lake Walk 🎭',
-};
-
-function getBotReply(input: string) {
-  const text = input.toLowerCase();
-
-  for (const key in inferenceEngine) {
-    if (text.includes(key)) return inferenceEngine[key];
-  }
-
-  return "🤖 I'm learning more Sri Lanka travel ideas...";
-}
 
 export default function HeroSection() {
   const [open, setOpen] = useState(true);
   const [message, setMessage] = useState('');
-  const [chat, setChat] = useState([{ role: 'bot', text: '👋 Hi! I am PearlGo AI Travel Assistant.' }]);
+  const [typing, setTyping] = useState(false);
+  const [chat, setChat] = useState([{ role: 'bot', text: '👋 Hi! I am PearlGo AI Travel Assistant. How can I help you explore Sri Lanka today?' }]);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const handleSend = async (suggestion?: string) => {
+    const textToSend = suggestion || message;
+    if (!textToSend.trim() || typing) return;
 
-    const reply = getBotReply(message);
-
-    setChat((prev) => [...prev, { role: 'user', text: message }, { role: 'bot', text: reply }]);
-
+    // Add user message
+    setChat((prev) => [...prev, { role: 'user', text: textToSend }]);
     setMessage('');
+    setTyping(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: textToSend }),
+      });
+
+      const data = await response.json();
+      
+      if (data.response) {
+        setChat((prev) => [...prev, { role: 'bot', text: data.response }]);
+      } else {
+        throw new Error('No response from AI');
+      }
+    } catch (error) {
+      setChat((prev) => [...prev, { role: 'bot', text: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again! 🤖" }]);
+    } finally {
+      setTyping(false);
+    }
   };
 
   return (
@@ -107,10 +106,17 @@ export default function HeroSection() {
                         <Bot size={14} /> PearlGo AI
                       </div>
                     )}
-                    {c.text}
+                    <ChatMessage text={c.text} />
                   </div>
                 </div>
               ))}
+              {typing && (
+                <div className="flex justify-start">
+                  <div className="bg-white text-gray-500 rounded-2xl rounded-bl-none border border-gray-100 px-4 py-2 text-xs animate-pulse">
+                    PearlGo AI is thinking...
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* input */}
@@ -125,7 +131,7 @@ export default function HeroSection() {
 
               <button
                 type="button"
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 aria-label="Send message"
                 title="Send message"
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-[#004aad] text-white hover:scale-110 transition"
@@ -140,7 +146,7 @@ export default function HeroSection() {
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setMessage(s)}
+                  onClick={() => handleSend(s)}
                   className="text-[11px] px-3 py-1 rounded-full bg-blue-50 text-[#004aad] hover:bg-blue-100 transition"
                 >
                   {s}
