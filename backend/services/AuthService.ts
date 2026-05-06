@@ -36,6 +36,15 @@ export class AuthService {
     return null; // Failure
   }
 
+  // Requirement 5: Secure admin login
+  async adminLogin(email: string, passwordHash: string): Promise<User | null> {
+    const user = await this.userRepository.findByEmail(email);
+    if (user && user.passwordHash === passwordHash && user.role === 'ADMIN') {
+      return user;
+    }
+    return null; // Failure or unauthorized role
+  }
+
   // Requirement 4: Store and manage user profile information
   async updateProfile(userId: string, updates: Partial<User>): Promise<User | null> {
     return this.userRepository.update(userId, updates);

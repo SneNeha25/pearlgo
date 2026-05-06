@@ -1,42 +1,67 @@
 import { User } from '../models/User';
 import { IRepository } from './IRepository';
-
-// Mock in-memory database
-const users: User[] = [];
+import { db } from '../firebase';
+import { ref, get, set, update, remove, child } from 'firebase/database';
 
 export class UserRepository implements IRepository<User> {
+  private usersRef = ref(db, 'users');
+
+  private parseDates(user: any): User {
+    if (user && user.createdAt) {
+      user.createdAt = new Date(user.createdAt);
+    }
+    return user as User;
+  }
+
   async findAll(): Promise<User[]> {
-    return users;
+    const snapshot = await get(this.usersRef);
+    if (!snapshot.exists()) return [];
+    
+    const usersObj = snapshot.val();
+    return Object.values(usersObj).map((u: any) => this.parseDates(u));
   }
 
   async findById(id: string): Promise<User | null> {
-    const user = users.find(u => u.id === id);
-    return user || null;
+    const userRef = child(this.usersRef, id);
+    const snapshot = await get(userRef);
+    if (!snapshot.exists()) return null;
+    return this.parseDates(snapshot.val());
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = users.find(u => u.email === email);
-    return user || null;
+    const users = await this.findAll();
+    return users.find(u => u.email === email) || null;
   }
 
   async create(user: User): Promise<User> {
-    users.push(user);
+    const userRef = child(this.usersRef, user.id);
+    const userToSave = { ...user, createdAt: user.createdAt.toISOString() };
+    await set(userRef, userToSave);
     return user;
   }
 
   async update(id: string, item: Partial<User>): Promise<User | null> {
-    const index = users.findIndex(u => u.id === id);
-    if (index === -1) return null;
+    const userRef = child(this.usersRef, id);
+    const snapshot = await get(userRef);
+    if (!snapshot.exists()) return null;
     
-    users[index] = { ...users[index], ...item };
-    return users[index];
+    const updateData: any = { ...item };
+    if (updateData.createdAt instanceof Date) {
+       updateData.createdAt = updateData.createdAt.toISOString();
+    }
+    
+    await update(userRef, updateData);
+    
+    const updatedSnapshot = await get(userRef);
+    return this.parseDates(updatedSnapshot.val());
   }
 
   async delete(id: string): Promise<boolean> {
-    const index = users.findIndex(u => u.id === id);
-    if (index === -1) return false;
+    const userRef = child(this.usersRef, id);
+    const snapshot = await get(userRef);
+    if (!snapshot.exists()) return false;
     
-    users.splice(index, 1);
+    await remove(userRef);
     return true;
   }
 }

@@ -1,18 +1,26 @@
 import { TourPackage } from '../models/TourPackage';
 import { FAQ, ChatQuery } from '../models/ChatQuery';
+import { Booking } from '../models/Booking';
 import { PackageRepository } from '../repositories/PackageRepository';
 import { QueryRepository } from '../repositories/QueryRepository';
+import { BookingRepository } from '../repositories/BookingRepository';
 
 export class AdminService {
   private packageRepository: PackageRepository;
   private queryRepository: QueryRepository;
+  private bookingRepository: BookingRepository;
 
   constructor() {
     this.packageRepository = new PackageRepository();
     this.queryRepository = new QueryRepository();
+    this.bookingRepository = new BookingRepository();
   }
 
-  // Requirement 15: Admin manage travel packages
+  // Requirement 1: Admin manage travel packages
+  async getAllPackages(): Promise<TourPackage[]> {
+    return this.packageRepository.findAll();
+  }
+
   async addPackage(pkgData: Omit<TourPackage, 'id' | 'createdAt'>): Promise<TourPackage> {
     const newPackage: TourPackage = {
       ...pkgData,
@@ -30,7 +38,11 @@ export class AdminService {
     return this.packageRepository.delete(id);
   }
 
-  // Requirement 15: Admin manage chatbot data (FAQs & review unknown queries)
+  // Requirement 2: Admin manage chatbot data (FAQs & review unknown queries)
+  async getAllFAQs(): Promise<FAQ[]> {
+    return this.queryRepository.getAllFAQs();
+  }
+
   async addFAQ(question: string, answer: string, category?: string): Promise<FAQ> {
     const newFAQ: FAQ = {
       id: crypto.randomUUID(),
@@ -39,6 +51,14 @@ export class AdminService {
       category
     };
     return this.queryRepository.addFAQ(newFAQ);
+  }
+
+  async updateFAQ(id: string, updates: Partial<FAQ>): Promise<boolean> {
+    return this.queryRepository.updateFAQ(id, updates);
+  }
+
+  async deleteFAQ(id: string): Promise<boolean> {
+    return this.queryRepository.deleteFAQ(id);
   }
 
   async getUnknownQueries(): Promise<ChatQuery[]> {
@@ -59,5 +79,18 @@ export class AdminService {
     await this.addFAQ(query.queryText, answerToProvide, 'Learned');
 
     return true;
+  }
+
+  // Requirement 3: Admin manage user bookings
+  async getAllBookings(): Promise<Booking[]> {
+    return this.bookingRepository.findAll();
+  }
+
+  async confirmBooking(bookingId: string): Promise<Booking | null> {
+    return this.bookingRepository.update(bookingId, { status: 'CONFIRMED' });
+  }
+
+  async cancelBooking(bookingId: string): Promise<Booking | null> {
+    return this.bookingRepository.update(bookingId, { status: 'CANCELLED' });
   }
 }

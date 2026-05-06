@@ -1,86 +1,108 @@
 import { ChatQuery, FAQ } from '../models/ChatQuery';
 import { IRepository } from './IRepository';
-
-const queries: ChatQuery[] = [];
-
-const faqs: FAQ[] = [
-  {
-    id: '1',
-    question: 'How do I cancel my booking?',
-    answer: 'You can cancel your booking by visiting your profile page and clicking "Cancel" next to the booking.',
-    category: 'Booking',
-  },
-  {
-    id: '2',
-    question: 'What payment methods are accepted?',
-    answer: 'We accept Visa, MasterCard, and PayPal.',
-    category: 'Payment',
-  },
-];
+import { db } from '../firebase';
+import { ref, get, set, update, remove, child } from 'firebase/database';
 
 export class QueryRepository implements IRepository<ChatQuery> {
+  private queriesRef = ref(db, 'chatQueries');
+  private faqsRef = ref(db, 'faqs');
+
+  private parseDates(query: any): ChatQuery {
+    if (query && query.timestamp) {
+      query.timestamp = new Date(query.timestamp);
+    }
+    return query as ChatQuery;
+  }
+
   async findAll(): Promise<ChatQuery[]> {
-    return queries;
+    const snapshot = await get(this.queriesRef);
+    if (!snapshot.exists()) return [];
+    
+    const queriesObj = snapshot.val();
+    return Object.values(queriesObj).map((q: any) => this.parseDates(q));
   }
 
   async findById(id: string): Promise<ChatQuery | null> {
-    const query = queries.find((q) => q.id === id);
-    return query || null;
+    const queryRef = child(this.queriesRef, id);
+    const snapshot = await get(queryRef);
+    if (!snapshot.exists()) return null;
+    return this.parseDates(snapshot.val());
   }
 
   async findUnknownQueries(): Promise<ChatQuery[]> {
+    const queries = await this.findAll();
     return queries.filter((q) => q.status === 'UNKNOWN');
   }
 
   async create(query: ChatQuery): Promise<ChatQuery> {
-    queries.push(query);
+    const queryRef = child(this.queriesRef, query.id);
+    const queryToSave = { ...query, timestamp: query.timestamp.toISOString() };
+    await set(queryRef, queryToSave);
     return query;
   }
 
   async update(id: string, item: Partial<ChatQuery>): Promise<ChatQuery | null> {
-    const index = queries.findIndex((q) => q.id === id);
-    if (index === -1) return null;
+    const queryRef = child(this.queriesRef, id);
+    const snapshot = await get(queryRef);
+    if (!snapshot.exists()) return null;
 
-    queries[index] = { ...queries[index], ...item };
-    return queries[index];
+    const updateData: any = { ...item };
+    if (updateData.timestamp instanceof Date) {
+       updateData.timestamp = updateData.timestamp.toISOString();
+    }
+
+    await update(queryRef, updateData);
+    
+    const updatedSnapshot = await get(queryRef);
+    return this.parseDates(updatedSnapshot.val());
   }
 
   async delete(id: string): Promise<boolean> {
-    const index = queries.findIndex((q) => q.id === id);
-    if (index === -1) return false;
+    const queryRef = child(this.queriesRef, id);
+    const snapshot = await get(queryRef);
+    if (!snapshot.exists()) return false;
 
-    queries.splice(index, 1);
+    await remove(queryRef);
     return true;
   }
 
   // Specific methods for FAQs
   async getAllFAQs(): Promise<FAQ[]> {
-    return faqs;
+    const snapshot = await get(this.faqsRef);
+    if (!snapshot.exists()) return [];
+    
+    const faqsObj = snapshot.val();
+    return Object.values(faqsObj);
   }
 
   async getFAQById(id: string): Promise<FAQ | null> {
-    const faq = faqs.find((f) => f.id === id);
-    return faq || null;
+    const faqRef = child(this.faqsRef, id);
+    const snapshot = await get(faqRef);
+    if (!snapshot.exists()) return null;
+    return snapshot.val() as FAQ;
   }
 
   async addFAQ(faq: FAQ): Promise<FAQ> {
-    faqs.push(faq);
+    const faqRef = child(this.faqsRef, faq.id);
+    await set(faqRef, faq);
     return faq;
   }
 
   async updateFAQ(id: string, updates: Partial<FAQ>): Promise<boolean> {
-    const index = faqs.findIndex((f) => f.id === id);
-    if (index === -1) return false;
+    const faqRef = child(this.faqsRef, id);
+    const snapshot = await get(faqRef);
+    if (!snapshot.exists()) return false;
 
-    faqs[index] = { ...faqs[index], ...updates };
+    await update(faqRef, updates);
     return true;
   }
 
   async deleteFAQ(id: string): Promise<boolean> {
-    const index = faqs.findIndex((f) => f.id === id);
-    if (index === -1) return false;
+    const faqRef = child(this.faqsRef, id);
+    const snapshot = await get(faqRef);
+    if (!snapshot.exists()) return false;
 
-    faqs.splice(index, 1);
+    await remove(faqRef);
     return true;
   }
 }
