@@ -10,7 +10,8 @@ import Faq from '@/components/FAQ/page';
 export default function Home() {
   return (
     <main>
-      <HeroSection /> <Herotwo /> <HeroThree /> <DestinationsSection />
+      <HeroSection />
+      <Herotwo /> <HeroThree /> <DestinationsSection />
       <TripPlanner />
       <Team />
       <Testimonials />
