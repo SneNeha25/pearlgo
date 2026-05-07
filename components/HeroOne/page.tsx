@@ -92,7 +92,7 @@ export default function HeroSection() {
 
         {/* CHAT */}
         {open && (
-          <div className="mx-auto w-full max-w-md bg-white/50 backdrop-blur-xl border border-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
+          <div className="mx-auto w-full max-w-7xl bg-white/50 backdrop-blur-xl border border-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
             {/* messages */}
             <div className="h-[320px] overflow-y-auto p-4 space-y-3 text-left">
               {chat.map((c, i) => (
