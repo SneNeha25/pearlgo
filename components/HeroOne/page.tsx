@@ -11,13 +11,13 @@ const suggestions = [
   'Colombo city tour plan',
 ];
 
-
-
 export default function HeroSection() {
   const [open, setOpen] = useState(true);
   const [message, setMessage] = useState('');
   const [typing, setTyping] = useState(false);
-  const [chat, setChat] = useState([{ role: 'bot', text: '👋 Hi! I am PearlGo AI Travel Assistant. How can I help you explore Sri Lanka today?' }]);
+  const [chat, setChat] = useState([
+    { role: 'bot', text: '👋 Hi! I am PearlGo AI Travel Assistant. How can I help you explore Sri Lanka today?' },
+  ]);
 
   const handleSend = async (suggestion?: string) => {
     const textToSend = suggestion || message;
@@ -36,14 +36,17 @@ export default function HeroSection() {
       });
 
       const data = await response.json();
-      
+
       if (data.response) {
         setChat((prev) => [...prev, { role: 'bot', text: data.response }]);
       } else {
         throw new Error('No response from AI');
       }
     } catch (error) {
-      setChat((prev) => [...prev, { role: 'bot', text: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again! 🤖" }]);
+      setChat((prev) => [
+        ...prev,
+        { role: 'bot', text: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again! 🤖" },
+      ]);
     } finally {
       setTyping(false);
     }
