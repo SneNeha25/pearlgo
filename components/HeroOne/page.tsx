@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Send, Sparkles, Bot, MessageCircle, Plane, MapPin, Globe, ArrowRight } from 'lucide-react';
 import ChatMessage from '../ChatMessage';
+import { useAuth } from '@/context/AuthContext';
 
 const suggestions = [
   '3-day Sri Lanka beach tour',
@@ -12,6 +13,7 @@ const suggestions = [
 ];
 
 export default function HeroSection() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(true);
   const [message, setMessage] = useState('');
   const [typing, setTyping] = useState(false);
@@ -41,6 +43,7 @@ export default function HeroSection() {
         },
         body: JSON.stringify({
           query: textToSend,
+          userId: user?.uid,
         }),
       });
 
