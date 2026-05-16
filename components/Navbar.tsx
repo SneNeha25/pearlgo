@@ -35,6 +35,7 @@ export default function Navbar() {
     { name: 'Login', icon: <LogIn size={18} />, href: '/login' },
     { name: 'About', icon: <CircleHelp size={18} />, href: '/about' },
     { name: 'Contact', icon: <MessageCircle size={18} />, href: '/contact' },
+    { name: 'Settings', icon: <Settings size={18} />, href: '/pearlgo-settings' },
     { name: 'Terms of service', icon: <FileText size={18} />, href: '/terms' },
   ];
 
@@ -105,9 +106,7 @@ export default function Navbar() {
                       <p className="text-sm text-gray-400">Loading…</p>
                     ) : user ? (
                       <>
-                        <p className="text-sm font-semibold text-gray-800">
-                          👋 {user.displayName || 'Traveller'}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-800">👋 {user.displayName || 'Traveller'}</p>
                         <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </>
                     ) : (
@@ -162,8 +161,14 @@ export default function Navbar() {
           animation: fadeIn 0.2s ease-in-out;
         }
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
       `}</style>
     </>

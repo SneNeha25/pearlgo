@@ -16,6 +16,7 @@ export default function Home() {
   const dailyPrice = Math.round(price / 18);
 
   const suggestions = [
+    'Good morning',
     'What is the budget breakdown?',
     'Places near Sigiriya',
     'Best time to visit Sri Lanka?',
@@ -30,7 +31,9 @@ export default function Home() {
 
     let response = '';
 
-    if (userText.includes('hi')) {
+    if (userText.includes('good morning') || userText.includes('good afternoon') || userText.includes('good evening')) {
+      response = 'Good morning! 👋 How can I help you with your Sri Lanka trip today?';
+    } else if (userText.includes('hi') || userText.includes('hello')) {
       response = 'Hi 👋 PearlGo here! Ready to plan your adventure!';
     } else if (userText.includes('budget') || userText.includes('cheaper')) {
       const newPrice = Math.round(price * 0.7);

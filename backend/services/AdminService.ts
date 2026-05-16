@@ -1,19 +1,23 @@
 import { TourPackage } from '../models/TourPackage';
 import { FAQ, ChatQuery } from '../models/ChatQuery';
 import { Booking } from '../models/Booking';
+import { User } from '../models/User';
 import { PackageRepository } from '../repositories/PackageRepository';
 import { QueryRepository } from '../repositories/QueryRepository';
 import { BookingRepository } from '../repositories/BookingRepository';
+import { UserRepository } from '../repositories/UserRepository';
 
 export class AdminService {
   private packageRepository: PackageRepository;
   private queryRepository: QueryRepository;
   private bookingRepository: BookingRepository;
+  private userRepository: UserRepository;
 
   constructor() {
     this.packageRepository = new PackageRepository();
     this.queryRepository = new QueryRepository();
     this.bookingRepository = new BookingRepository();
+    this.userRepository = new UserRepository();
   }
 
   // Requirement 1: Admin manage travel packages
@@ -25,7 +29,7 @@ export class AdminService {
     const newPackage: TourPackage = {
       ...pkgData,
       id: crypto.randomUUID(),
-      createdAt: new Date()
+      createdAt: new Date(),
     };
     return this.packageRepository.create(newPackage);
   }
@@ -48,7 +52,7 @@ export class AdminService {
       id: crypto.randomUUID(),
       question,
       answer,
-      category
+      category,
     };
     return this.queryRepository.addFAQ(newFAQ);
   }
@@ -70,9 +74,9 @@ export class AdminService {
     if (!query) return false;
 
     // We can simultaneously convert this to an FAQ if needed, but for now just mark it answered
-    await this.queryRepository.update(queryId, { 
-      status: 'ANSWERED', 
-      responseGiven: answerToProvide 
+    await this.queryRepository.update(queryId, {
+      status: 'ANSWERED',
+      responseGiven: answerToProvide,
     });
 
     // Optionally add to FAQs automatically
@@ -92,5 +96,31 @@ export class AdminService {
 
   async cancelBooking(bookingId: string): Promise<Booking | null> {
     return this.bookingRepository.update(bookingId, { status: 'CANCELLED' });
+  }
+
+  // Requirement 4: Admin manage users
+  async getAllUsers(): Promise<User[]> {
+    return this.userRepository.findAll();
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    return this.userRepository.findById(id);
+  }
+
+  async createUser(userData: Omit<User, 'id' | 'createdAt'>): Promise<User> {
+    const newUser: User = {
+      ...userData,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+    };
+    return this.userRepository.create(newUser);
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | null> {
+    return this.userRepository.update(id, updates);
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.userRepository.delete(id);
   }
 }
