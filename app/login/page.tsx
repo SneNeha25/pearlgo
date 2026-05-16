@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  updateProfile,
-} from 'firebase/auth';
-import { ref, set } from 'firebase/database';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { ref, set, get } from 'firebase/database';
 import { auth, db } from '@/backend/firebase';
+
+interface DbUser {
+  name?: string;
+  email?: string;
+}
 
 export default function AuthPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
 
   // Login fields
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
 
   // Register fields
@@ -34,10 +35,34 @@ export default function AuthPage() {
     setError('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      let loginEmail = identifier.trim();
+
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail);
+      if (!isEmail) {
+        // If the user provided a username, look up the email from the users database.
+        const usersSnapshot = await get(ref(db, 'users'));
+        const users = usersSnapshot.exists() ? (usersSnapshot.val() as Record<string, DbUser>) : null;
+
+        if (!users) {
+          throw new Error('auth/user-not-found');
+        }
+
+        const foundUser = Object.values(users).find((user) => user.name?.toLowerCase() === loginEmail.toLowerCase());
+        if (!foundUser || !foundUser.email) {
+          throw new Error('auth/user-not-found');
+        }
+
+        loginEmail = foundUser.email;
+      }
+
+      await signInWithEmailAndPassword(auth, loginEmail, password);
       router.push('/'); // redirect to home after login
-    } catch (err: any) {
-      setError(friendlyError(err.code));
+    } catch (err: unknown) {
+      const code =
+        typeof err === 'object' && err !== null && 'code' in err ? (err as { code?: string }).code : undefined;
+      const message =
+        typeof err === 'object' && err !== null && 'message' in err ? (err as { message?: string }).message : undefined;
+      setError(friendlyError(code || message || ''));
     } finally {
       setLoading(false);
     }
@@ -77,8 +102,12 @@ export default function AuthPage() {
       });
 
       router.push('/'); // redirect home after registration
-    } catch (err: any) {
-      setError(friendlyError(err.code));
+    } catch (err: unknown) {
+      const code =
+        typeof err === 'object' && err !== null && 'code' in err ? (err as { code?: string }).code : undefined;
+      const message =
+        typeof err === 'object' && err !== null && 'message' in err ? (err as { message?: string }).message : undefined;
+      setError(friendlyError(code || message || ''));
     } finally {
       setLoading(false);
     }
@@ -90,7 +119,7 @@ export default function AuthPage() {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
-        return 'Invalid email or password. Please try again.';
+        return 'Invalid email/username or password. Please try again.';
       case 'auth/email-already-in-use':
         return 'This email is already registered. Please log in.';
       case 'auth/invalid-email':
@@ -134,7 +163,10 @@ export default function AuthPage() {
           {/* TABS */}
           <div className="flex justify-center gap-8 mb-6">
             <button
-              onClick={() => { setMode('login'); setError(''); }}
+              onClick={() => {
+                setMode('login');
+                setError('');
+              }}
               className={`text-sm font-semibold pb-2 transition ${
                 mode === 'login' ? 'text-[#004aad] border-b-2 border-[#004aad]' : 'text-gray-400'
               }`}
@@ -142,7 +174,10 @@ export default function AuthPage() {
               Login
             </button>
             <button
-              onClick={() => { setMode('register'); setError(''); }}
+              onClick={() => {
+                setMode('register');
+                setError('');
+              }}
               className={`text-sm font-semibold pb-2 transition ${
                 mode === 'register' ? 'text-[#004aad] border-b-2 border-[#004aad]' : 'text-gray-400'
               }`}
@@ -170,13 +205,13 @@ export default function AuthPage() {
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="mt-6 space-y-4">
               <div>
-                <label className="text-xs text-gray-600">Email</label>
+                <label className="text-xs text-gray-600">Email or Username</label>
                 <input
-                  type="email"
-                  id="login-email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  type="text"
+                  id="login-identifier"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Enter your email or username"
                   className="w-full mt-1 px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-[#004aad] outline-none"
                   required
                 />
@@ -201,10 +236,13 @@ export default function AuthPage() {
                 {loading ? 'Signing in…' : 'LOGIN'}
               </button>
               <p
-                onClick={() => { setMode('register'); setError(''); }}
+                onClick={() => {
+                  setMode('register');
+                  setError('');
+                }}
                 className="text-center text-xs text-[#004aad] cursor-pointer hover:underline"
               >
-                Don't have an account? Register
+                Dont have an account? Register
               </p>
             </form>
           )}
@@ -268,7 +306,10 @@ export default function AuthPage() {
                 {loading ? 'Creating account…' : 'REGISTER'}
               </button>
               <p
-                onClick={() => { setMode('login'); setError(''); }}
+                onClick={() => {
+                  setMode('login');
+                  setError('');
+                }}
                 className="text-center text-xs text-[#004aad] cursor-pointer hover:underline"
               >
                 Already have an account? Login

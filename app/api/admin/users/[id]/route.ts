@@ -3,16 +3,10 @@ import { AdminService } from '@/backend/services/AdminService';
 
 const adminService = new AdminService();
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 // GET /api/admin/users/[id] - Get a specific user
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const user = await adminService.getUserById(id);
 
     if (!user) {
@@ -27,9 +21,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // PUT /api/admin/users/[id] - Update a user
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, email, passwordHash, preferences, role } = body;
 
@@ -54,9 +48,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/admin/users/[id] - Delete a user
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const success = await adminService.deleteUser(id);
 
     if (!success) {
